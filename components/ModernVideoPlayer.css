@@ -1,0 +1,431 @@
+/* Modern Video Player Skin - PERBAIKAN */
+.modern-video-container {
+  --primary-color: rgba(255, 255, 255, 0.95);
+  --secondary-color: rgba(255, 255, 255, 0.7);
+  --control-bg: rgba(0, 0, 0, 0.7);
+  --control-bg-hover: rgba(0, 0, 0, 0.85);
+  --progress-color: rgba(255, 0, 0, 0.95);
+  --buffered-color: rgba(26, 13, 207, 0.829);
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --transition-speed: 0.2s;
+}
+  
+  /* Base video-js overrides */
+  .vjs-modern-skin.video-js {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 14px;
+    color: var(--primary-color);
+  }
+  
+  /* BIG PLAY BUTTON FIX - TAMBAHKAN INI */
+.vjs-modern-skin .vjs-big-play-button {
+  border: none;
+  background: var(--control-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  margin-top: -40px;
+  margin-left: -40px;
+  transition: all var(--transition-speed) ease;
+}
+
+.vjs-modern-skin .vjs-big-play-button:hover {
+  background: var(--control-bg-hover);
+  transform: scale(1.05);
+}
+
+/* Hanya sembunyikan ::before untuk control bar, bukan big play button */
+.vjs-modern-skin .vjs-control-bar .vjs-icon-placeholder:before {
+  display: none !important;
+}
+
+/* Custom icon untuk big play button */
+.vjs-modern-skin .vjs-big-play-button .vjs-icon-placeholder:before {
+  display: block !important;
+  content: '' !important;
+}
+
+.vjs-modern-skin .vjs-big-play-button .vjs-icon-placeholder {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Tambahkan SVG icon untuk big play button */
+.vjs-modern-skin .vjs-big-play-button .vjs-icon-placeholder::after {
+  content: '';
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='white' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='5 3 19 12 5 21 5 3'%3E%3C/polygon%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+  
+  /* Control Bar */
+  .vjs-modern-skin .vjs-control-bar {
+    background: var(--control-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    height: 48px;
+    padding: 0 12px;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  /* Buttons - Modern Style */
+  .vjs-modern-skin .vjs-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    transition: all var(--transition-speed) ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    cursor: pointer;
+  }
+  
+  .vjs-modern-skin .vjs-button:hover {
+    background: var(--hover-bg);
+  }
+  
+  .vjs-modern-skin .vjs-button:active {
+    transform: scale(0.95);
+  }
+  
+  /* Custom Icons Container */
+  .vjs-modern-skin .custom-icon-play,
+  .vjs-modern-skin .custom-icon-volume,
+  .vjs-modern-skin .custom-icon-fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .vjs-modern-skin .custom-icon-play svg,
+  .vjs-modern-skin .custom-icon-volume svg,
+  .vjs-modern-skin .custom-icon-fullscreen svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Hide default icon placeholders */
+  .vjs-modern-skin .vjs-icon-placeholder:before {
+    display: none !important;
+  }
+  
+  .vjs-modern-skin .vjs-icon-placeholder {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .vjs-modern-skin .vjs-icon-placeholder svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Play Button */
+  .vjs-modern-skin .vjs-play-control {
+    order: 1;
+  }
+  
+  /* Volume Panel */
+  .vjs-modern-skin .vjs-volume-panel {
+    order: 2;
+    display: flex;
+    align-items: center;
+    width: auto;
+    transition: width var(--transition-speed) ease;
+  }
+  
+  .vjs-modern-skin .vjs-mute-control {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* Volume Slider */
+  .vjs-modern-skin .vjs-volume-control {
+    width: 0;
+    opacity: 0;
+    transition: width var(--transition-speed) ease, opacity var(--transition-speed) ease;
+  }
+  
+  .vjs-modern-skin .vjs-volume-panel:hover .vjs-volume-control,
+  .vjs-modern-skin .vjs-volume-panel.vjs-hover .vjs-volume-control {
+    width: 80px;
+    opacity: 1;
+    margin: 0 8px;
+  }
+  
+  .vjs-modern-skin .vjs-volume-bar {
+    background: rgba(255, 255, 255, 0.2);
+    height: 4px;
+    border-radius: 2px;
+    margin: 1.5em 0;
+  }
+  
+  .vjs-modern-skin .vjs-volume-level {
+    background: var(--primary-color);
+    height: 4px;
+    border-radius: 2px;
+  }
+  
+  /* Time Display */
+  .vjs-modern-skin .vjs-current-time,
+  .vjs-modern-skin .vjs-duration {
+    display: block;
+    padding: 0 8px;
+    font-size: 13px;
+    line-height: 40px;
+    font-variant-numeric: tabular-nums;
+    color: var(--primary-color);
+  }
+  
+  .vjs-modern-skin .vjs-time-divider {
+    padding: 0 4px;
+    min-width: auto;
+    line-height: 40px;
+    color: var(--secondary-color);
+    font-size: 13px;
+  }
+  
+  /* Fix time divider visibility */
+  .vjs-modern-skin .vjs-time-divider > div {
+    display: flex;
+    align-items: center;
+    height: 40px;
+  }
+  
+  .vjs-modern-skin .vjs-time-divider > div > span {
+    color: var(--secondary-color);
+  }
+  
+  .vjs-modern-skin .vjs-current-time {
+    order: 3;
+  }
+  
+  .vjs-modern-skin .vjs-time-divider {
+    order: 4;
+  }
+  
+  .vjs-modern-skin .vjs-duration {
+    order: 5;
+  }
+  
+  /* Progress Control */
+  .vjs-modern-skin .vjs-progress-control {
+    order: 6;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 40px;
+  }
+  
+  .vjs-modern-skin .vjs-progress-holder {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 0;
+    transition: height var(--transition-speed) ease;
+    position: relative;
+  }
+  
+  .vjs-modern-skin .vjs-progress-control:hover .vjs-progress-holder {
+    height: 6px;
+  }
+  
+/* Load Progress (Buffered) - warna cream */
+.vjs-modern-skin .vjs-load-progress,
+.vjs-modern-skin .vjs-load-progress div {
+  background: #f5deb3 !important; /* warna cream */
+  border-radius: 2px;
+  height: 100%;
+}
+
+/* Play Progress (diputar) - warna merah */
+.vjs-modern-skin .vjs-play-progress {
+  background: #ff2e2e !important; /* warna merah cerah */
+  border-radius: 2px;
+  position: absolute;
+  height: 100%;
+  top: 0;
+  left: 0;
+  width: 0;
+}
+.vjs-modern-skin .vjs-play-progress {
+  background: linear-gradient(90deg, #ff2e2e, #ff6a00) !important;
+}
+
+  
+  /* Progress Thumb */
+  .vjs-modern-skin .vjs-play-progress:before {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity var(--transition-speed) ease;
+  }
+  
+  .vjs-modern-skin .vjs-progress-control:hover .vjs-play-progress:before {
+    opacity: 1;
+  }
+  
+  /* Tooltip */
+  .vjs-modern-skin .vjs-time-tooltip,
+  .vjs-modern-skin .vjs-mouse-display .vjs-time-tooltip {
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--primary-color);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  
+  /* Settings/Playback Rate Button */
+  .vjs-modern-skin .vjs-playback-rate {
+    order: 7;
+    position: relative;
+  }
+  
+  .vjs-modern-skin .vjs-playback-rate .vjs-playback-rate-value {
+    font-size: 13px;
+    line-height: 40px;
+    color: var(--primary-color);
+    pointer-events: none;
+    padding: 0 12px;
+  }
+  
+  .vjs-modern-skin .vjs-playback-rate .vjs-menu {
+    bottom: 48px;
+    background: var(--control-bg-hover);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .vjs-modern-skin .vjs-playback-rate .vjs-menu-content {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .vjs-modern-skin .vjs-menu li {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--primary-color);
+    transition: background var(--transition-speed) ease;
+  }
+  
+  .vjs-modern-skin .vjs-menu li:hover,
+  .vjs-modern-skin .vjs-menu li.vjs-selected {
+    background: var(--hover-bg);
+  }
+  
+  .vjs-modern-skin .vjs-menu li.vjs-selected {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+  
+  /* PiP Button */
+  .vjs-modern-skin .vjs-picture-in-picture-control {
+    order: 8;
+  }
+  
+  /* Fullscreen Button */
+  .vjs-modern-skin .vjs-fullscreen-control {
+    order: 9;
+  }
+  
+  /* Loading Spinner */
+  .vjs-modern-skin .vjs-loading-spinner {
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: var(--primary-color);
+  }
+  
+  /* Error Display */
+  .vjs-modern-skin .vjs-error-display {
+    background: var(--control-bg);
+    backdrop-filter: blur(10px);
+  }
+  
+  .vjs-modern-skin .vjs-error-display .vjs-modal-dialog-content {
+    color: var(--primary-color);
+  }
+  
+  /* Hide control text (accessibility) */
+  .vjs-modern-skin .vjs-control-text {
+    clip: rect(0 0 0 0);
+    border: 0;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .vjs-modern-skin .vjs-control-bar {
+      height: 44px;
+      padding: 0 8px;
+    }
+    
+    .vjs-modern-skin .vjs-button {
+      width: 36px;
+      height: 36px;
+    }
+    
+    .vjs-modern-skin .vjs-current-time,
+    .vjs-modern-skin .vjs-duration {
+      font-size: 12px;
+      padding: 0 4px;
+    }
+    
+    .vjs-modern-skin .vjs-volume-panel:hover .vjs-volume-control {
+      width: 60px;
+    }
+  
+    .vjs-modern-skin .vjs-playback-rate .vjs-playback-rate-value {
+      padding: 0 8px;
+    }
+    
+    .vjs-modern-skin .vjs-big-play-button {
+      width: 60px;
+      height: 60px;
+      margin-top: -30px;
+      margin-left: -30px;
+    }
+    
+    .vjs-modern-skin .vjs-big-play-button .vjs-icon-placeholder {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .vjs-modern-skin .vjs-big-play-button .vjs-icon-placeholder svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
