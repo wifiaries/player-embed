@@ -26,7 +26,6 @@ export default function ModernVideoPlayer({ src, poster, autoplay = false }: Mod
         fluid: true,
         responsive: true,
         aspectRatio: '16:9',
-        poster: poster,
         playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         controlBar: {
           children: [
@@ -124,7 +123,7 @@ export default function ModernVideoPlayer({ src, poster, autoplay = false }: Mod
     const iconContainer = playButton.querySelector('.custom-icon-play');
     if (iconContainer) {
       iconContainer.innerHTML = isPaused 
-        ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
         : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
     }
   };

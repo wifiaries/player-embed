@@ -20,7 +20,7 @@
   /* BIG PLAY BUTTON FIX - TAMBAHKAN INI */
 .vjs-modern-skin .vjs-big-play-button {
   border: none;
-  background: var(--control-bg);
+  background: #ff2e2e;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 50%;

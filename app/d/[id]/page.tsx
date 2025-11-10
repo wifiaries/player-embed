@@ -40,7 +40,7 @@ export default async function DownloadPage({ params }: DownloadPageProps) {
     notFound();
   }
 
-  const embedUrl = `/embed/${id}`;
+  const embedUrl = `/e/${id}`;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -109,7 +109,7 @@ export default async function DownloadPage({ params }: DownloadPageProps) {
           <p className="text-gray-600 mb-3">Copy and paste this code to embed the video on your website:</p>
           <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
             <code className="text-sm">
-              {`<iframe src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com'}${embedUrl}" width="100%" height="500" frameborder="0" allowfullscreen allow="autoplay; fullscreen"></iframe>`}
+              {`<iframe src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://stream.bagibagi.com'}${embedUrl}" width="100%" height="500" frameborder="0" allowfullscreen allow="autoplay; fullscreen"></iframe>`}
             </code>
           </div>
         </div>
