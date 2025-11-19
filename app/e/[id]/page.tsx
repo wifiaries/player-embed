@@ -1,5 +1,6 @@
 import React from 'react';
 import ModernVideoPlayer from '@/components/ModernVideoPlayer';
+import AdsterraPopunder from '@/components/AdsterraPopunder';
 import { getVideoById } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 
@@ -21,14 +22,19 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
   const shouldAutoplay = autoplay === 'true' || autoplay === '1';
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden flex items-center justify-center">
-      <div className="w-full h-full">
-        <ModernVideoPlayer
-          src={video.video_url}
-          poster={video.thumbnail_url || undefined}
-          autoplay={shouldAutoplay}
-        />
+    <>
+      {/* Adsterra Popunder - Client Component */}
+      <AdsterraPopunder />
+
+      <div className="fixed inset-0 bg-black overflow-hidden flex items-center justify-center">
+        <div className="w-full h-full">
+          <ModernVideoPlayer
+            src={video.video_url}
+            poster={video.thumbnail_url || undefined}
+            autoplay={shouldAutoplay}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
