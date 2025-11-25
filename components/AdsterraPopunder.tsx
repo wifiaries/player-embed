@@ -5,6 +5,9 @@ import Script from 'next/script';
 
 export default function AdsterraPopunder() {
   const clickCountRef = useRef(0);
+  const lastDirectLinkRef = useRef(0);
+  const popunderTriggeredRef = useRef(false);
+  
   const directLinkUrl = process.env.NEXT_PUBLIC_DIRECTLINK_ADSTERRA || 
     'https://stoopeddiscourse.com/jinq93yxp?key=89a71a1e87218de7ed3f406db888198c';
   
@@ -12,41 +15,71 @@ export default function AdsterraPopunder() {
     '//stoopeddiscourse.com/10/ff/96/10ff965e2697a4ee6c71e8f58ddb0b0d.js';
 
   useEffect(() => {
-    const handleClick = () => {
+    const handleClick = (e: MouseEvent | TouchEvent) => {
+      // Pastikan ini adalah interaksi user yang genuine
+      if (!e.isTrusted) return;
+
+      // Hitung klik untuk directlink
       clickCountRef.current += 1;
-      
       console.log(`Click count: ${clickCountRef.current}`);
+
+      // Log popunder trigger pada klik pertama
+      if (!popunderTriggeredRef.current) {
+        popunderTriggeredRef.current = true;
+        console.log('🎯 Popunder triggered (managed by Adsterra script)');
+      }
       
-      // Buka directlink setelah klik ke-2
-      if (clickCountRef.current === 3) {
-        window.open(directLinkUrl, '_blank', 'noopener,noreferrer');
-        console.log('DirectLink opened!');
+      // DirectLink pada klik ke-2
+      if (clickCountRef.current === 5) {
+        const now = Date.now();
+        const timeSinceLastClick = now - lastDirectLinkRef.current;
         
-        // Reset counter setelah membuka link
-        clickCountRef.current = 0;
+        // Cooldown 60 detik
+        if (timeSinceLastClick < 60000 && lastDirectLinkRef.current !== 0) {
+          console.log('⏳ DirectLink cooldown active, waiting...');
+          clickCountRef.current = 1; // Keep at 1, don't reset to 0
+          return;
+        }
+        
+        // Buka directlink di tab baru
+        const newWindow = window.open(directLinkUrl, '_blank', 'noopener,noreferrer');
+        
+        if (newWindow) {
+          console.log('✅ DirectLink opened in new tab!');
+          lastDirectLinkRef.current = now;
+          clickCountRef.current = 0; // Reset setelah berhasil
+        } else {
+          console.warn('⚠️ Popup blocked! Please allow popups for this site.');
+          clickCountRef.current = 1; // Keep at 1 to try again
+        }
       }
     };
 
-    // Listen untuk click dan touch events
-    document.addEventListener('click', handleClick);
-    document.addEventListener('touchend', handleClick);
+    // Event listener dengan passive: false agar tidak mengganggu Adsterra script
+    document.addEventListener('click', handleClick as EventListener);
+    document.addEventListener('touchend', handleClick as EventListener);
 
     return () => {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('touchend', handleClick);
+      document.removeEventListener('click', handleClick as EventListener);
+      document.removeEventListener('touchend', handleClick as EventListener);
     };
   }, [directLinkUrl]);
 
   return (
-    <Script
-      src={scriptUrl}
-      strategy="afterInteractive"
-      onLoad={() => {
-        console.log('Adsterra popunder loaded successfully');
-      }}
-      onError={(e) => {
-        console.error('Failed to load Adsterra script:', e);
-      }}
-    />
+    <>
+      {/* Adsterra Popunder Script - Ini akan handle popunder otomatis */}
+      <Script
+        type="text/javascript"
+        src={scriptUrl}
+        strategy="lazyOnload"
+        onLoad={() => {
+          console.log('✅ Adsterra Popunder script loaded');
+          console.log('ℹ️  Popunder will trigger on first user click/interaction');
+        }}
+        onError={(e) => {
+          console.error('❌ Failed to load Adsterra script:', e);
+        }}
+      />
+    </>
   );
 }
