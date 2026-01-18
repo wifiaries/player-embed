@@ -16,56 +16,70 @@ export default function ModernVideoPlayer({ src, poster, autoplay = false }: Mod
   const playerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!playerRef.current && videoRef.current) {
-      const videoElement = videoRef.current;
+    // Delay initialization to ensure DOM is ready
+    const initPlayer = () => {
+      if (!playerRef.current && videoRef.current) {
+        const videoElement = videoRef.current;
 
-      const player = videojs(videoElement, {
-        controls: true,
-        autoplay: autoplay,
-        preload: 'metadata',
-        fluid: true,
-        responsive: true,
-        aspectRatio: '16:9',
-        playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        controlBar: {
-          children: [
-            'playToggle',
-            'volumePanel',
-            'currentTimeDisplay',
-            'timeDivider',
-            'durationDisplay',
-            'progressControl',
-            'playbackRateMenuButton',
-            'pictureInPictureToggle',
-            'fullscreenToggle',
-          ],
-        },
-        sources: [{
-          src: src,
-          type: 'video/mp4'
-        }]
-      });
+        // Check if element is actually in the DOM
+        if (!document.body.contains(videoElement)) {
+          console.log('Video element not in DOM yet, retrying...');
+          requestAnimationFrame(initPlayer);
+          return;
+        }
 
-      player.addClass('vjs-modern-skin');
-      playerRef.current = player;
+        const player = videojs(videoElement, {
+          controls: true,
+          autoplay: autoplay,
+          preload: 'metadata',
+          fluid: true,
+          responsive: true,
+          aspectRatio: '16:9',
+          playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+          controlBar: {
+            children: [
+              'playToggle',
+              'volumePanel',
+              'currentTimeDisplay',
+              'timeDivider',
+              'durationDisplay',
+              'progressControl',
+              'playbackRateMenuButton',
+              'pictureInPictureToggle',
+              'fullscreenToggle',
+            ],
+          },
+          sources: [{
+            src: src,
+            type: 'video/mp4'
+          }]
+        });
 
-      player.ready(function() {
-        console.log('Player is ready');
-        injectCustomIcons(player);
-      });
+        player.addClass('vjs-modern-skin');
+        playerRef.current = player;
 
-      // Update icons on play/pause
-      player.on('play', () => updatePlayIcon(player, false));
-      player.on('pause', () => updatePlayIcon(player, true));
-      player.on('volumechange', () => updateVolumeIcon(player));
-      player.on('fullscreenchange', () => updateFullscreenIcon(player));
+        player.ready(function () {
+          console.log('Player is ready');
+          injectCustomIcons(player);
+        });
 
-      player.on('error', function() {
-        console.error('Player error:', player.error());
-      });
-    }
+        // Update icons on play/pause
+        player.on('play', () => updatePlayIcon(player, false));
+        player.on('pause', () => updatePlayIcon(player, true));
+        player.on('volumechange', () => updateVolumeIcon(player));
+        player.on('fullscreenchange', () => updateFullscreenIcon(player));
+
+        player.on('error', function () {
+          console.error('Player error:', player.error());
+        });
+      }
+    };
+
+    // Use setTimeout to ensure we're in a stable React state
+    const timeoutId = setTimeout(initPlayer, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       const player = playerRef.current;
       if (player && !player.isDisposed()) {
         player.dispose();
@@ -122,7 +136,7 @@ export default function ModernVideoPlayer({ src, poster, autoplay = false }: Mod
     const playButton = player.controlBar.playToggle.el();
     const iconContainer = playButton.querySelector('.custom-icon-play');
     if (iconContainer) {
-      iconContainer.innerHTML = isPaused 
+      iconContainer.innerHTML = isPaused
         ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
         : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
     }
@@ -134,7 +148,7 @@ export default function ModernVideoPlayer({ src, poster, autoplay = false }: Mod
     if (iconContainer) {
       const vol = player.volume();
       const muted = player.muted();
-      
+
       if (muted || vol === 0) {
         iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
       } else if (vol < 0.3) {

@@ -1,6 +1,6 @@
 import React from 'react';
-import ModernVideoPlayer from '@/components/ModernVideoPlayer';
-import AdsterraPopunder from '@/components/AdsterraPopunder';
+import VideoPlayerWithAds from '@/components/VideoPlayerWithAds';
+import HilltopAdsPopunder from '@/components/HilltopAdsPopunder';
 import { getVideoById } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 
@@ -12,7 +12,7 @@ interface EmbedPageProps {
 export default async function EmbedPage({ params, searchParams }: EmbedPageProps) {
   const { id } = await params;
   const { autoplay } = await searchParams;
-  
+
   const video = await getVideoById(id);
 
   if (!video) {
@@ -23,12 +23,12 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
 
   return (
     <>
-      {/* Adsterra Popunder - Client Component */}
-      <AdsterraPopunder />
+      {/* HilltopAds Popunder - Client Component */}
+      <HilltopAdsPopunder />
 
       <div className="fixed inset-0 bg-black overflow-hidden flex items-center justify-center">
         <div className="w-full h-full">
-          <ModernVideoPlayer
+          <VideoPlayerWithAds
             src={video.video_url}
             poster={video.thumbnail_url || undefined}
             autoplay={shouldAutoplay}
