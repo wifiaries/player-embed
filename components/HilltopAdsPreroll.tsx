@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './HilltopAdsPreroll.css';
 
 interface HilltopAdsPrerollProps {
@@ -8,149 +8,326 @@ interface HilltopAdsPrerollProps {
   onAdSkipped?: () => void;
 }
 
+declare global {
+  interface Window {
+    google: {
+      ima: {
+        AdDisplayContainer: new (container: HTMLElement, video?: HTMLVideoElement) => ImaAdDisplayContainer;
+        AdsLoader: new (container: ImaAdDisplayContainer) => ImaAdsLoader;
+        AdsRequest: new () => ImaAdsRequest;
+        AdsManagerLoadedEvent: {
+          Type: {
+            ADS_MANAGER_LOADED: string;
+          };
+        };
+        AdErrorEvent: {
+          Type: {
+            AD_ERROR: string;
+          };
+        };
+        AdEvent: {
+          Type: {
+            CONTENT_PAUSE_REQUESTED: string;
+            CONTENT_RESUME_REQUESTED: string;
+            ALL_ADS_COMPLETED: string;
+            STARTED: string;
+            COMPLETE: string;
+            SKIPPED: string;
+            LOADED: string;
+          };
+        };
+        ViewMode: {
+          NORMAL: string;
+        };
+      };
+    };
+  }
+}
+
+interface ImaAdDisplayContainer {
+  initialize: () => void;
+}
+
+interface ImaAdsLoader {
+  addEventListener: (event: string, handler: (e: unknown) => void, capture: boolean) => void;
+  requestAds: (request: ImaAdsRequest) => void;
+  contentComplete: () => void;
+}
+
+interface ImaAdsRequest {
+  adTagUrl: string;
+  linearAdSlotWidth: number;
+  linearAdSlotHeight: number;
+}
+
+interface ImaAdsManager {
+  addEventListener: (event: string, handler: (e: unknown) => void) => void;
+  init: (width: number, height: number, viewMode: string) => void;
+  start: () => void;
+  destroy: () => void;
+  resize: (width: number, height: number, viewMode: string) => void;
+}
+
+interface ImaAdsManagerLoadedEvent {
+  getAdsManager: (content: { currentTime: number; duration: number }, settings?: object) => ImaAdsManager;
+}
+
 export default function HilltopAdsPreroll({ onAdComplete, onAdSkipped }: HilltopAdsPrerollProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [countdown, setCountdown] = useState(5);
-  const [canSkip, setCanSkip] = useState(false);
-  const [adError, setAdError] = useState(false);
+  const [adPlaying, setAdPlaying] = useState(false);
+  const [hasAd, setHasAd] = useState(false);
+  const [adError, setAdError] = useState<string | null>(null);
 
-  const adUrl = process.env.NEXT_PUBLIC_HILLTOPADS_VSAT;
+  const adContainerRef = useRef<HTMLDivElement>(null);
+  const adVideoRef = useRef<HTMLVideoElement>(null);
+  const adsLoaderRef = useRef<ImaAdsLoader | null>(null);
+  const adsManagerRef = useRef<ImaAdsManager | null>(null);
+  const adDisplayContainerRef = useRef<ImaAdDisplayContainer | null>(null);
+  const initCalledRef = useRef(false);
 
-  const handleSkip = useCallback(() => {
-    if (canSkip) {
-      onAdSkipped?.();
-      onAdComplete();
+  // Use the IMA-compatible VAST URL
+  const vastUrl = process.env.NEXT_PUBLIC_HILLTOPADS_VAST_IMA || process.env.NEXT_PUBLIC_HILLTOPADS_VSAT;
+
+  const destroyAdsManager = useCallback(() => {
+    if (adsManagerRef.current) {
+      adsManagerRef.current.destroy();
+      adsManagerRef.current = null;
     }
-  }, [canSkip, onAdComplete, onAdSkipped]);
-
-  const handleAdClick = useCallback(() => {
-    if (adUrl) {
-      window.open(adUrl, '_blank', 'noopener,noreferrer');
-    }
-  }, [adUrl]);
-
-  useEffect(() => {
-    // Set loading to false after ad container is ready
-    const loadTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(loadTimer);
   }, []);
 
+  const skipToContent = useCallback(() => {
+    destroyAdsManager();
+    onAdComplete();
+  }, [destroyAdsManager, onAdComplete]);
+
+  const handleAdSkip = useCallback(() => {
+    destroyAdsManager();
+    onAdSkipped?.();
+    onAdComplete();
+  }, [destroyAdsManager, onAdComplete, onAdSkipped]);
+
+  // Initialize IMA SDK
   useEffect(() => {
-    if (isLoading) return;
+    if (initCalledRef.current) return;
+    initCalledRef.current = true;
 
-    // Countdown timer
-    const countdownInterval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownInterval);
-          setCanSkip(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // If no VAST URL, skip to content
+    if (!vastUrl) {
+      console.log('[HilltopAds] No VAST URL configured, skipping to content');
+      skipToContent();
+      return;
+    }
 
-    // Auto-complete after 15 seconds if user doesn't skip
-    const autoCompleteTimer = setTimeout(() => {
-      onAdComplete();
-    }, 15000);
+    // Load IMA SDK script
+    const script = document.createElement('script');
+    script.src = 'https://imasdk.googleapis.com/js/sdkloader/ima3.js';
+    script.async = true;
+
+    script.onload = () => {
+      console.log('[HilltopAds] IMA SDK loaded');
+      initializeIMA();
+    };
+
+    script.onerror = () => {
+      console.error('[HilltopAds] Failed to load IMA SDK');
+      setAdError('Failed to load ad SDK');
+      skipToContent();
+    };
+
+    document.head.appendChild(script);
 
     return () => {
-      clearInterval(countdownInterval);
-      clearTimeout(autoCompleteTimer);
+      destroyAdsManager();
+      if (adsLoaderRef.current) {
+        adsLoaderRef.current.contentComplete();
+      }
     };
-  }, [isLoading, onAdComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Handle ad load error
-  useEffect(() => {
-    if (!adUrl) {
-      setAdError(true);
-      // If no ad URL, skip directly to video
-      setTimeout(() => {
-        onAdComplete();
-      }, 500);
+  const initializeIMA = useCallback(() => {
+    if (!adContainerRef.current || !adVideoRef.current || !window.google?.ima) {
+      console.error('[HilltopAds] Missing required elements');
+      skipToContent();
+      return;
     }
-  }, [adUrl, onAdComplete]);
 
-  if (adError) {
+    try {
+      // Create ad display container
+      adDisplayContainerRef.current = new window.google.ima.AdDisplayContainer(
+        adContainerRef.current,
+        adVideoRef.current
+      );
+
+      // Create ads loader
+      adsLoaderRef.current = new window.google.ima.AdsLoader(adDisplayContainerRef.current);
+
+      // Add event listeners
+      adsLoaderRef.current.addEventListener(
+        window.google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+        onAdsManagerLoaded,
+        false
+      );
+
+      adsLoaderRef.current.addEventListener(
+        window.google.ima.AdErrorEvent.Type.AD_ERROR,
+        onAdError,
+        false
+      );
+
+      // Create ads request
+      const adsRequest = new window.google.ima.AdsRequest();
+      adsRequest.adTagUrl = vastUrl!;
+      adsRequest.linearAdSlotWidth = adContainerRef.current.clientWidth || 640;
+      adsRequest.linearAdSlotHeight = adContainerRef.current.clientHeight || 360;
+
+      console.log('[HilltopAds] Requesting ads from:', vastUrl);
+      adsLoaderRef.current.requestAds(adsRequest);
+
+    } catch (err) {
+      console.error('[HilltopAds] Error initializing IMA:', err);
+      skipToContent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vastUrl, skipToContent]);
+
+  const onAdsManagerLoaded = useCallback((adsManagerLoadedEvent: unknown) => {
+    const event = adsManagerLoadedEvent as ImaAdsManagerLoadedEvent;
+
+    try {
+      // Get ads manager
+      const contentPlayer = { currentTime: 0, duration: 0 };
+      adsManagerRef.current = event.getAdsManager(contentPlayer);
+
+      // Add event listeners
+      const ima = window.google.ima;
+
+      adsManagerRef.current.addEventListener(ima.AdEvent.Type.LOADED, () => {
+        console.log('[HilltopAds] Ad loaded');
+        setHasAd(true);
+        setIsLoading(false);
+      });
+
+      adsManagerRef.current.addEventListener(ima.AdEvent.Type.STARTED, () => {
+        console.log('[HilltopAds] Ad started');
+        setAdPlaying(true);
+      });
+
+      adsManagerRef.current.addEventListener(ima.AdEvent.Type.COMPLETE, () => {
+        console.log('[HilltopAds] Ad completed');
+        skipToContent();
+      });
+
+      adsManagerRef.current.addEventListener(ima.AdEvent.Type.SKIPPED, () => {
+        console.log('[HilltopAds] Ad skipped');
+        handleAdSkip();
+      });
+
+      adsManagerRef.current.addEventListener(ima.AdEvent.Type.ALL_ADS_COMPLETED, () => {
+        console.log('[HilltopAds] All ads completed');
+        skipToContent();
+      });
+
+      adsManagerRef.current.addEventListener(ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+
+      // Initialize AdDisplayContainer (required before starting ads)
+      adDisplayContainerRef.current?.initialize();
+
+      // Initialize and start the ads manager
+      const width = adContainerRef.current?.clientWidth || 640;
+      const height = adContainerRef.current?.clientHeight || 360;
+
+      adsManagerRef.current.init(width, height, window.google.ima.ViewMode.NORMAL);
+      adsManagerRef.current.start();
+
+    } catch (err) {
+      console.error('[HilltopAds] Error in ads manager:', err);
+      skipToContent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skipToContent, handleAdSkip]);
+
+  const onAdError = useCallback((adErrorEvent: unknown) => {
+    console.log('[HilltopAds] Ad error or no ads available:', adErrorEvent);
+
+    // Check if it's just "no ads" (empty VAST)
+    const errorMessage = String(adErrorEvent);
+    if (errorMessage.includes('VAST') || errorMessage.includes('empty')) {
+      console.log('[HilltopAds] No ads available (empty VAST), skipping to content');
+    } else {
+      console.log('[HilltopAds] Ad error, skipping to content');
+    }
+
+    setAdError('No ads available');
+    skipToContent();
+  }, [skipToContent]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (adsManagerRef.current && adContainerRef.current) {
+        const width = adContainerRef.current.clientWidth;
+        const height = adContainerRef.current.clientHeight;
+        adsManagerRef.current.resize(width, height, window.google.ima.ViewMode.NORMAL);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Timeout - if loading takes too long, skip to content
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading && !hasAd) {
+        console.log('[HilltopAds] Timeout waiting for ads, skipping to content');
+        skipToContent();
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isLoading, hasAd, skipToContent]);
+
+  // If there's an error and no ad, don't render anything (already skipped to content)
+  if (adError && !hasAd) {
     return null;
   }
 
   return (
     <div className="hilltop-preroll-container">
+      {/* Ad Container for IMA */}
+      <div ref={adContainerRef} className="hilltop-ad-container">
+        {/* Video element for ads */}
+        <video
+          ref={adVideoRef}
+          className="hilltop-ad-video"
+          playsInline
+          muted={false}
+        />
+      </div>
+
       {/* Loading Overlay */}
-      {isLoading && (
+      {isLoading && !adPlaying && (
         <div className="hilltop-loading">
           <div className="hilltop-spinner"></div>
-          <p>Loading advertisement...</p>
         </div>
       )}
 
-      {/* Ad Content */}
-      {!isLoading && (
-        <>
-          {/* Ad Banner Area - Clickable */}
-          <div className="hilltop-ad-content" onClick={handleAdClick}>
-            <div className="hilltop-ad-banner">
-              <div className="hilltop-ad-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-                  <line x1="7" y1="2" x2="7" y2="22"></line>
-                  <line x1="17" y1="2" x2="17" y2="22"></line>
-                  <line x1="2" y1="12" x2="22" y2="12"></line>
-                  <line x1="2" y1="7" x2="7" y2="7"></line>
-                  <line x1="2" y1="17" x2="7" y2="17"></line>
-                  <line x1="17" y1="17" x2="22" y2="17"></line>
-                  <line x1="17" y1="7" x2="22" y2="7"></line>
-                </svg>
-              </div>
-              <div className="hilltop-ad-text">
-                <span className="hilltop-ad-label">Advertisement</span>
-                <span className="hilltop-ad-cta">Click to learn more</span>
-              </div>
-              <div className="hilltop-glow-effect"></div>
-            </div>
-          </div>
+      {/* Ad Badge - Show when ad is playing */}
+      {adPlaying && (
+        <div className="hilltop-ad-badge">
+          <span>AD</span>
+        </div>
+      )}
 
-          {/* Ad Badge */}
-          <div className="hilltop-ad-badge">
-            <span>AD</span>
-          </div>
-
-          {/* Skip Button / Countdown */}
-          <div className="hilltop-skip-container">
-            {canSkip ? (
-              <button className="hilltop-skip-button" onClick={handleSkip}>
-                <span>Skip Ad</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                  <line x1="19" y1="5" x2="19" y2="19"></line>
-                </svg>
-              </button>
-            ) : (
-              <div className="hilltop-countdown">
-                <span>Skip in {countdown}s</span>
-                <div className="hilltop-countdown-progress">
-                  <div 
-                    className="hilltop-countdown-bar" 
-                    style={{ width: `${((5 - countdown) / 5) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Video will play message */}
-          <div className="hilltop-video-message">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-            <span>Video will play after ad</span>
-          </div>
-        </>
+      {/* Video will play message - Show when ad is playing */}
+      {adPlaying && (
+        <div className="hilltop-video-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Video will play after ad</span>
+        </div>
       )}
     </div>
   );
